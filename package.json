@@ -1,0 +1,26 @@
+{
+  "name": "media-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/C0rv1n0G/Media-bot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/C0rv1n0G/Media-bot/issues"
+  },
+  "homepage": "https://github.com/C0rv1n0G/Media-bot#readme",
+  "dependencies": {
+    "axios": "^1.13.6",
+    "dotenv": "^17.3.1",
+    "telegraf": "^4.16.3"
+  }
+}
