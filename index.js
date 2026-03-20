@@ -7,7 +7,12 @@ bot.start((ctx) => ctx.reply('Привет! Я - Media-bot. Скинь мне с
 
 bot.on('text', (ctx) => {
     const text = ctx.message.text
-    ctx.reply('Ты написал: ' + text)
+
+    if (text.startsWith('http://') || text.startsWith('https://')){
+        ctx.reply('Вижу ссылку: ' + text)
+    } else {
+        ctx.reply('Это не ссылка. Пришли URL.')
+    }
 })
 
 bot.launch()
