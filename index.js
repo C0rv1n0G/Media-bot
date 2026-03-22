@@ -6,6 +6,15 @@ const bot = new Telegraf(process.env.BOT_TOKEN)
 
 bot.start((ctx) => ctx.reply('Привет! Я - Media-bot. Скинь мне ссылку.'))
 
+bot.command('list', (ctx) => {
+    fs.readFile('links.txt', 'utf8', (err, data) => {
+        if (err) {
+            ctx.reply('Список пуст.')
+        } else {
+            ctx.reply(data)
+        }
+    })
+})
 bot.on('text', (ctx) => {
     const text = ctx.message.text
 
