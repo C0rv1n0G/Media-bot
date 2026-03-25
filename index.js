@@ -8,6 +8,44 @@ const bot = new Telegraf(process.env.BOT_TOKEN)
 
 bot.start((ctx) => ctx.reply('Привет! Я - Media-bot. Скинь мне ссылку.'))
 
+bot.command('list', (ctx) => {
+    fs.readFile('links.json', 'utf8', (err, data) => {
+        if (err) {
+            ctx.reply('Список пуст.')
+        } else {
+            const links = JSON.parse(data)
+            const text = links.map((l, i) => `${i+1}. ${l.url}`).join('\n')
+            ctx.reply(text)
+        }
+    })
+})
+
+bot.command('find', (ctx) => {
+    const query = ctx.message.text.replace('/find', '').trim().toLowerCase()
+
+    if(!query) {
+        ctx.reply('Напиши тег после команды. Например: /find арт.')
+        return
+    }
+
+    fs.readFile('links.json','utf8', (err, data) => {
+        if (err) {
+            ctx.reply('Список пуст.')
+            return
+        }
+
+        const links = JSON.parse(data)
+        const found = links.filter(l => l.tags.some(t => t.toLowerCase() === query))
+
+        if (found.length === 0) {
+            ctx.reply('Ничего не найдено по тегу ${query')
+        } else {
+            const text = found.map((l, i) => `${i+1}. ${l.url}`).join('\n')
+            ctx.reply(text)
+        }
+    })
+})
+
 bot.on('text', (ctx) => {
   const text = ctx.message.text
   const userId = ctx.from.id
