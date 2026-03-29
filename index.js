@@ -58,18 +58,26 @@ bot.on('text', (ctx) => {
 
     fs.readFile('links.json', 'utf8', (err, data) => {
         const links = err ? [] :    JSON.parse(data)
-        links.push({
-            url: pendingLink,
-            tags: tags,
-            person: '',
-            data: new Date().toISOString().slice(0, 10)
-           })
+        const existing = links.find(l => l.url === pendingLink)
+        if (existing) {
+            const newTags = tags.filter(t => !existing.tags.includes(t))
+            existing.tags = [...existing.tags,...newTags]
+            existing.date = new Date().toISOString().slice(0, 10)
+        } else {
+            links.push({
+                url: pendingLink,
+                tags: tags,
+                person: '',
+                date: new Date().toISOString().slice(0, 10)
+            })
+        }
            fs.writeFile('links.json', JSON.stringify(links, null, 2), (err) => {
             if (err) {
                 ctx.reply('Ошибка при сохранении.')
             } else {
-                ctx.reply(`Сохранено. Теги: ${tags.length ? tags.join (', ') : 'нет'}`)
-            }
+                const allTags = existing ? existing.tags : tags
+                ctx.reply(`Сохранено. Теги: ${allTags.length ? allTags.join(', ') : 'нет'}`)
+                   }
            })
     })
     return
