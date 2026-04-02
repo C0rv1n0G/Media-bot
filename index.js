@@ -92,7 +92,7 @@ bot.on('callback_query', async (ctx) => {
             fs.writeFile('links.json', JSON.stringify(links, null, 2), (err) => {
                 const allTags = existing
                 ? existing.tags
-                : selectedTags.tags
+                : selectedTags
                 ctx.reply(`Сохранено. Теги: ${allTags.length ? allTags.join(', ') : 'нет'}`)
             })
         })
@@ -110,38 +110,8 @@ bot.on('text', (ctx) => {
         ctx.reply(`Тег "${text.trim()}" добавлен. Продолжай выбирать или нажми "Готово".`)
         return
     }
-    const tags = text === '-' ? [] : text.split(',').map(t => t.trim()).filter(t => t)
-    const pendingLink = sessions[userId].url
-
-    delete sessions[userId]
-
-    fs.readFile('links.json', 'utf8', (err, data) => {
-        const links = err ? [] :    JSON.parse(data)
-        const existing = links.find(l => l.url === pendingLink)
-        if (existing) {
-            const newTags = tags.filter(t => !existing.tags.includes(t))
-            existing.tags = [...existing.tags,...newTags]
-            existing.date = new Date().toISOString().slice(0, 10)
-        } else {
-            links.push({
-                url: pendingLink,
-                tags: tags,
-                person: '',
-                date: new Date().toISOString().slice(0, 10)
-            })
-        }
-           fs.writeFile('links.json', JSON.stringify(links, null, 2), (err) => {
-            if (err) {
-                ctx.reply('Ошибка при сохранении.')
-            } else {
-                const allTags = existing ? existing.tags : tags
-                ctx.reply(`Сохранено. Теги: ${allTags.length ? allTags.join(', ') : 'нет'}`)
-                   }
-           })
-    })
     return
-
-  }
+}  
 
 if (text.startsWith('http://') || text.startsWith('https://')) {
     sessions[userId] = { url: text, selectedTags: [] }
