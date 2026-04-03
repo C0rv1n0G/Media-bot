@@ -140,5 +140,11 @@ if (text.startsWith('http://') || text.startsWith('https://')) {
     }
 })
 
+bot.telegram.setMyCommands([
+    { command: 'start', description: 'Запустить бота' },
+    { command: 'list', description: 'Показать все ссылки' },
+    { command: 'find', description: 'Найти по тегу: /find арт' },
+])
+
 bot.launch()
 console.log('Бот запущен')
