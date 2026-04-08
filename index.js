@@ -69,8 +69,16 @@ bot.on('callback_query', async (ctx) => {
 
     } else if (data === 'done') {
         const { url, selectedTags } = sessions[userId]
-        delete sessions[userId]
         await ctx.answerCbQuery()
+
+        sessions[userId] = {
+            url,
+            selectedTags,
+            waitingForPerson: true
+        }
+
+        await ctx.reply('Укажи автора или источник (или отправь "-" чтобы пропустить):')
+        return
 
         fs.readFile('links.json', 'utf8', (err, fileData) => {
             const links = err ? [] : JSON.parse(fileData)
@@ -104,6 +112,38 @@ bot.on('text', (ctx) => {
   const userId = ctx.from.id
 
   if (sessions[userId]) {
+    if (sessions[userId]?.waitingForPerson) {
+        const person = text.trim() === '-' ? '' : text.trim()
+        const { url, selectedTags } = sessions[userId]
+        delete sessions[userId]
+
+        fs.readFile('links.json', 'utf8', (err, data) => {
+            const links = err ? [] : JSON.parse(data)
+            const existing = links.find(l=> l.url === url)
+
+            if (existing) {
+                const newTags = selectedTags.filter(t => !existing.tags.includes(t))
+                existing.tags = [...existing.tags, ...newTags]
+                existing.person = person || existing.person
+                existing.date = new Date().toISOString().slice(0, 10) 
+            } else {
+                links.push({
+                    url,
+                    tags: selectedTags,
+                    person,
+                    date: new Date().toISOString().slice(0, 10)
+                })
+            }
+
+            fs.writeFile('links.json', JSON.stringify(links, null, 2), (err) => {
+                const saved = existing || { tags: selectedTags, person }
+                const tagsStr = saved.tags.length ? saved.tags.join(', ') : 'нет'
+                const personStr = saved.person || 'не указан'
+                ctx.reply(`Сохранено. \nТеги: ${tagsStr}\nАвтор: ${personStr}`)
+            })
+        })
+        return
+    }
     if (sessions[userId]?.waitingForNewTag) {
         sessions[userId].selectedTags.push(text.trim())
         sessions[userId].waitingForNewTag = false
