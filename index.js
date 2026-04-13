@@ -1,6 +1,7 @@
 require('dotenv').config()
 const { Telegraf } = require('telegraf')
 const fs = require('fs')
+const { parseUrl, transformUrl } = require('./utils')
 
 const sessions ={}
 
@@ -38,7 +39,7 @@ bot.command('find', (ctx) => {
         const found = links.filter(l => l.tags.some(t => t.toLowerCase() === query))
 
         if (found.length === 0) {
-            ctx.reply('Ничего не найдено по тегу ${query')
+            ctx.reply(`Ничего не найдено по тегу ${query}`)
         } else {
             const text = found.map((l, i) => `${i+1}. ${l.url}`).join('\n')
             ctx.reply(text)
@@ -61,6 +62,29 @@ bot.on('callback_query', async (ctx) => {
             sessions[userId].selectedTags.push(tag) 
         }
         await ctx.answerCbQuery(`✓ ${tag}`)
+
+    } else if (data === 'add_tags') {
+        await ctx.answerCbQuery()
+        sessions[userId].waitingForNewTag = true
+        await ctx.reply ('Напиши теги через запятую:')
+
+    } else if (data === 'close') {
+        const { url, selectedTags } = sessions[userId]
+        delete sessions[userId]
+        await ctx.reply('Готово.')
+
+        if (selectedTags.length > 0) {
+            fs.readFile('links.json', 'utf8', (err, fileData) => {
+                const links = err ? [] : JSON.parse(fileData)
+                const existing = links.find(l => l.url === url)
+                if (existing) {
+                    const newTags = selectedTags.filter(t => !existing.tags.includes(t))
+                    existing.tags = [...existing.tags, ...newTags]
+                    existing.dare = new Date().toISOString().slice(0, 10)
+                    fs.writeFile('links.json', JSON.stringify(links, null, 2), () => {})
+                }
+            })
+        }
 
     } else if (data === 'new_tag') {
         sessions[userId].waitingForNewTag = true
@@ -145,7 +169,8 @@ bot.on('text', (ctx) => {
         return
     }
     if (sessions[userId]?.waitingForNewTag) {
-        sessions[userId].selectedTags.push(text.trim())
+        text.split(',').map(t => t.trim()).filter(t => t)
+            .forEach(t => {if (!sessions[userId].selectedTags.includes(t)) sessions[userId].selectedTags.push(t) })
         sessions[userId].waitingForNewTag = false
         ctx.reply(`Тег "${text.trim()}" добавлен. Продолжай выбирать или нажми "Готово".`)
         return
@@ -153,31 +178,47 @@ bot.on('text', (ctx) => {
     return
 }  
 
-if (text.startsWith('http://') || text.startsWith('https://')) {
-    sessions[userId] = { url: text, selectedTags: [] }
+if (text.startsWith('https://') || text.startsWith('http://')) {
+    const transformed = transformUrl(text)
+    const { platform, author, tags } =parseUrl(text)
 
     fs.readFile('links.json', 'utf8', (err, data) => {
         const links = err ? [] : JSON.parse(data)
-        const allTags = [...new Set(links.flatMap(l => l.tags))]
+        const existing = links.find(l => l.url === text)
 
-        const tagButtons = allTags.map(t => ({ text: t, callback_data: `tag:${t}`}))
-        const controlButtons = [
-            { text: '✏️ Новый тег', callback_data: 'new_tag' },
-            { text: '✅ Готово', callback_data: 'done' }
-        ]
-        const keyboard = []
-        for (let i=0; i < tagButtons.length; i += 3) {
-            keyboard.push(tagButtons.slice(i, i + 3))
+        if (existing) {
+            const newTags = tags.filter(t => !existing.tags.includes(t))
+            existing.tags =[...existing.tags, ...newTags]
+            existing.date - new Date().toISOString().slice(0,10)
+        } else {
+            links.push({
+                url: text,
+                tags,
+                person: author,
+                date: new Date().toISOString().slice(0, 10)
+            })
         }
-        keyboard.push(controlButtons)
 
-        ctx.reply('Выбери теги:', {
-            reply_markup: {inline_keyboard: keyboard}
+    fs.writeFile('links.json', JSON.stringify(links, null, 2), () => {
+        const saved = existing || { tags, person: author }
+        const tagsStr = saved.tags.length ? saved.tags.join(', ') : 'нет'
+        const personStr = saved.person || 'не определен'
+
+        sessions[userId] = { url: text, selectedTags: [...tags] }
+
+        ctx.reply(`Сохранено. \nПлатформа: ${platform || 'неизвестна'}\nАвтор: ${personStr}\nТеги: ${tagsStr}`,{
+            reply_markup: {
+                inline_keyboard: [[
+                    { text: '🏷 Добавить теги:', callback_data: 'add_tags' },
+                    { text: '✅ Готово', callback_data: 'close' }
+                ]]
+            }
         })
     })
-    } else {
-        ctx.reply('Это не ссылка. Пришли URL.')
-    }
+})    
+} else {
+    ctx.reply('Это не ссылка. Пришли URL.')
+}
 })
 
 bot.telegram.setMyCommands([
