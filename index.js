@@ -157,7 +157,7 @@ if (text.startsWith('https://') || text.startsWith('http://')) {
 
         sessions[userId] = { url: text, selectedTags: [...tags], waitingForNewTag: true }
 
-        ctx.reply(`Сохранено.\nПлатформа: ${platform || 'неизвестна'}\nАвтор: ${author || 'не определен'}\nТеги: ${tagsStr}\n\Добавть свои теги через запятую, или пришли следующую ссылку:`)
+        ctx.reply(`Сохранено.\nПлатформа: ${platform || 'неизвестна'}\nАвтор: ${author || 'не определен'}\nТеги: ${tagsStr}\n\Добавь свои теги через запятую, или пришли следующую ссылку:`)
     })
 })    
 } else {
