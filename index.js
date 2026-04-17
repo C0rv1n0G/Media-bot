@@ -80,31 +80,6 @@ bot.on('callback_query', async (ctx) => {
 
         await ctx.reply('Укажи автора или источник (или отправь "-" чтобы пропустить):')
         return
-
-        fs.readFile('links.json', 'utf8', (err, fileData) => {
-            const links = err ? [] : JSON.parse(fileData)
-            const existing = links.find(l => l.url === url)
-
-            if (existing) {
-                const newTags = selectedTags.filter(t => !existing.tags.includes(t))
-                existing.tags = [...existing.tags,...newTags]
-                existing.date = new Date().toISOString().slice(0, 10)
-            } else {
-                links.push({
-                    url,
-                    tags: selectedTags,
-                    person: '',
-                    date: new Date().toISOString().slice(0, 10)
-                })
-            }
-
-            fs.writeFile('links.json', JSON.stringify(links, null, 2), (err) => {
-                const allTags = existing
-                ? existing.tags
-                : selectedTags
-                ctx.reply(`Сохранено. Теги: ${allTags.length ? allTags.join(', ') : 'нет'}`)
-            })
-        })
     }
 })  
 
@@ -166,7 +141,7 @@ if (text.startsWith('https://') || text.startsWith('http://')) {
         if (existing) {
             const newTags = tags.filter(t => !existing.tags.includes(t))
             existing.tags =[...existing.tags, ...newTags]
-            existing.date - new Date().toISOString().slice(0,10)
+            existing.date = new Date().toISOString().slice(0,10)
         } else {
             links.push({
                 url: text,
