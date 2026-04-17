@@ -63,29 +63,6 @@ bot.on('callback_query', async (ctx) => {
         }
         await ctx.answerCbQuery(`✓ ${tag}`)
 
-    } else if (data === 'add_tags') {
-        await ctx.answerCbQuery()
-        sessions[userId].waitingForNewTag = true
-        await ctx.reply ('Напиши теги через запятую:')
-
-    } else if (data === 'close') {
-        const { url, selectedTags } = sessions[userId]
-        delete sessions[userId]
-        await ctx.reply('Готово.')
-
-        if (selectedTags.length > 0) {
-            fs.readFile('links.json', 'utf8', (err, fileData) => {
-                const links = err ? [] : JSON.parse(fileData)
-                const existing = links.find(l => l.url === url)
-                if (existing) {
-                    const newTags = selectedTags.filter(t => !existing.tags.includes(t))
-                    existing.tags = [...existing.tags, ...newTags]
-                    existing.dare = new Date().toISOString().slice(0, 10)
-                    fs.writeFile('links.json', JSON.stringify(links, null, 2), () => {})
-                }
-            })
-        }
-
     } else if (data === 'new_tag') {
         sessions[userId].waitingForNewTag = true
         await ctx.answerCbQuery()
@@ -202,18 +179,10 @@ if (text.startsWith('https://') || text.startsWith('http://')) {
     fs.writeFile('links.json', JSON.stringify(links, null, 2), () => {
         const saved = existing || { tags, person: author }
         const tagsStr = saved.tags.length ? saved.tags.join(', ') : 'нет'
-        const personStr = saved.person || 'не определен'
 
-        sessions[userId] = { url: text, selectedTags: [...tags] }
+        sessions[userId] = { url: text, selectedTags: [...tags], waitingForNewTag: true }
 
-        ctx.reply(`Сохранено. \nПлатформа: ${platform || 'неизвестна'}\nАвтор: ${personStr}\nТеги: ${tagsStr}`,{
-            reply_markup: {
-                inline_keyboard: [[
-                    { text: '🏷 Добавить теги:', callback_data: 'add_tags' },
-                    { text: '✅ Готово', callback_data: 'close' }
-                ]]
-            }
-        })
+        ctx.reply(`Сохранено.\nПлатформа: ${platform || 'неизвестна'}\nАвтор: ${author || 'не определен'}\nТеги: ${tagsStr}\n\Добавть свои теги через запятую, или пришли следующую ссылку:`)
     })
 })    
 } else {
