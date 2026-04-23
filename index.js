@@ -5,6 +5,17 @@ const { parseUrl, transformUrl } = require('./utils')
 
 const sessions ={}
 
+function buildTagKeyboard(tags, selected) {
+    const buttons=tags.map(t => [{
+        text: selected.includes(t) ? `✓ ${t}` : t,
+        callback_data: `tag:${t}`
+    }])
+    buttons.push([
+        { text: '➕ Добавить тег', callback_data: 'add_tags' },
+        { text: '✅ Готово', callback_data: 'done' }
+    ])
+    return { inline_keyboard: buttons }
+}
 const bot = new Telegraf(process.env.BOT_TOKEN)
 
 bot.start((ctx) => ctx.reply('Привет! Я - Media-bot. Скинь мне ссылку.'))
@@ -63,10 +74,9 @@ bot.on('callback_query', async (ctx) => {
         }
         await ctx.answerCbQuery(`✓ ${tag}`)
 
-    } else if (data === 'new_tag') {
+    } else if (data === 'add_tags') {
         sessions[userId].waitingForNewTag = true
         await ctx.answerCbQuery()
-        await ctx.reply('Напиши новый тег:')
 
     } else if (data === 'done') {
         const { url, selectedTags } = sessions[userId]
@@ -83,7 +93,7 @@ bot.on('callback_query', async (ctx) => {
     }
 })  
 
-bot.on('text', (ctx) => {
+bot.on('text', async (ctx) => {
   const text = ctx.message.text
   const userId = ctx.from.id
 
@@ -124,7 +134,20 @@ bot.on('text', (ctx) => {
         text.split(',').map(t => t.trim()).filter(t => t)
             .forEach(t => {if (!sessions[userId].selectedTags.includes(t)) sessions[userId].selectedTags.push(t) })
         sessions[userId].waitingForNewTag = false
-        ctx.reply(`Тег "${text.trim()}" добавлен. Продолжай выбирать или нажми "Готово".`)
+        
+        const { selectedTags, msgId, url } = sessions[userId]
+        const allTags = [...new Set([...selectedTags])]
+        
+        try {
+        await ctx.telegram.editMessageReplyMarkup(
+            ctx.chat.id,
+            msgId,
+            undefined,
+            buildTagKeyboard(allTags, selectedTags)
+        )
+        } catch (e) {
+            console.error('editMessageMarkup error:', e.message)
+        }
         return
     }
     return
@@ -151,13 +174,17 @@ if (text.startsWith('https://') || text.startsWith('http://')) {
             })
         }
 
-    fs.writeFile('links.json', JSON.stringify(links, null, 2), () => {
+    fs.writeFile('links.json', JSON.stringify(links, null, 2), async () => {
         const saved = existing || { tags, person: author }
         const tagsStr = saved.tags.length ? saved.tags.join(', ') : 'нет'
 
-        sessions[userId] = { url: text, selectedTags: [...tags], waitingForNewTag: true }
+        sessions[userId] = { url: text, selectedTags: [...tags] }
 
-        ctx.reply(`Сохранено.\nПлатформа: ${platform || 'неизвестна'}\nАвтор: ${author || 'не определен'}\nТеги: ${tagsStr}\n\Добавь свои теги через запятую, или пришли следующую ссылку:`)
+        const msg = await ctx.reply(
+            `Сохранено.\nПлатформа: ${platform || 'неизвестна'}\nАвтор: ${author || 'не определен'}\nТеги: ${tagsStr}`,
+            { reply_markup: buildTagKeyboard(tags, [...tags]) }
+        )
+        sessions[userId].msgId =msg.message_id
     })
 })    
 } else {

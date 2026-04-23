@@ -1,7 +1,7 @@
 function parseUrl(url) {
     try {
         const u = new URL(url)
-        const hostname = u.hostname.replace('www', '')
+        const hostname = u.hostname.replace('www.', '')
         const parts = u.pathname.split('/').filter(p => p)
 
         let platform = ''
@@ -16,7 +16,7 @@ function parseUrl(url) {
             if (parts[0] && parts[0] !== 'p' && parts[0] !== 'reel') author = parts[0]
         } else if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
             platform = 'youtube'
-        } else if (hostmane.includes('reddit.com') || hostname.includes('redd.it')) {
+        } else if (hostname.includes('reddit.com') || hostname.includes('redd.it')) {
             platform = 'reddit'
             if (hostname.includes('reddit.com') && parts[0] === 'r' && parts[1]) {
                 author = `r/${parts[1]}`
