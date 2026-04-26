@@ -78,8 +78,18 @@ bot.on('callback_query', async (ctx) => {
         sessions[userId].waitingForNewTag = true
         await ctx.answerCbQuery()
 
+        const { selectedTags, msgId } =sessions[userId]
+        const allTags = sessions[userId].selectedTags
+        await ctx.telegram.editMessageText(
+            ctx.chat.id,
+            msgId,
+            undefined,
+            '✏️Напиши тег или теги через запятую:',
+            { reply_markup: buildTagKeyboard(allTags, selectedTags) }
+        )
+
     } else if (data === 'done') {
-        const { url, selectedTags } = sessions[userId]
+        const { url, selectedTags, platform, author } = sessions[userId]
         await ctx.answerCbQuery()
 
         sessions[userId] = {
@@ -100,7 +110,7 @@ bot.on('text', async (ctx) => {
   if (sessions[userId]) {
     if (sessions[userId]?.waitingForPerson) {
         const person = text.trim() === '-' ? '' : text.trim()
-        const { url, selectedTags } = sessions[userId]
+        const { url, selectedTags, platform, author } = sessions[userId]
         delete sessions[userId]
 
         fs.readFile('links.json', 'utf8', (err, data) => {
@@ -125,7 +135,7 @@ bot.on('text', async (ctx) => {
                 const saved = existing || { tags: selectedTags, person }
                 const tagsStr = saved.tags.length ? saved.tags.join(', ') : 'нет'
                 const personStr = saved.person || 'не указан'
-                ctx.reply(`Сохранено. \nТеги: ${tagsStr}\nАвтор: ${personStr}`)
+                ctx.reply(`Сохранено.\nПлатформа: ${platform || 'неизвестна'}\nТеги: ${tagsStr}\nАвтор: ${personStr}`)
             })
         })
         return
@@ -135,15 +145,16 @@ bot.on('text', async (ctx) => {
             .forEach(t => {if (!sessions[userId].selectedTags.includes(t)) sessions[userId].selectedTags.push(t) })
         sessions[userId].waitingForNewTag = false
         
-        const { selectedTags, msgId, url } = sessions[userId]
+        const { selectedTags, msgId, url, platform, author } = sessions[userId]
         const allTags = [...new Set([...selectedTags])]
         
         try {
-        await ctx.telegram.editMessageReplyMarkup(
+        await ctx.telegram.editMessageText(
             ctx.chat.id,
             msgId,
             undefined,
-            buildTagKeyboard(allTags, selectedTags)
+            `Сохранено. \nТеги: ${allTags.join(', ')}`,
+            { reply_markup: buildTagKeyboard(allTags, selectedTags) }
         )
         } catch (e) {
             console.error('editMessageMarkup error:', e.message)
@@ -178,7 +189,7 @@ if (text.startsWith('https://') || text.startsWith('http://')) {
         const saved = existing || { tags, person: author }
         const tagsStr = saved.tags.length ? saved.tags.join(', ') : 'нет'
 
-        sessions[userId] = { url: text, selectedTags: [...tags] }
+        sessions[userId] = { url: text, selectedTags: [...tags], platform, author }
 
         const msg = await ctx.reply(
             `Сохранено.\nПлатформа: ${platform || 'неизвестна'}\nАвтор: ${author || 'не определен'}\nТеги: ${tagsStr}`,
