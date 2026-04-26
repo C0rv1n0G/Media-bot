@@ -89,7 +89,7 @@ bot.on('callback_query', async (ctx) => {
         )
 
     } else if (data === 'done') {
-        const { url, selectedTags, platform, author } = sessions[userId]
+        const { url, selectedTags } = sessions[userId]
         await ctx.answerCbQuery()
 
         sessions[userId] = {
