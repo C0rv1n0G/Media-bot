@@ -5,13 +5,13 @@ const { parseUrl, transformUrl } = require('./utils')
 
 const sessions ={}
 
-function buildTagKeyboard(tags, selected) {
+function buildTagKeyboard(tags, selected, waiting = false) {
     const buttons=tags.map(t => [{
         text: selected.includes(t) ? `✓ ${t}` : t,
         callback_data: `tag:${t}`
     }])
     buttons.push([
-        { text: '➕ Добавить тег', callback_data: 'add_tags' },
+        { text: waiting ? '⏳ Ожидание ввода...' : '➕ Добавить тег', callback_data: 'add_tags' },
         { text: '✅ Готово', callback_data: 'done' }
     ])
     return { inline_keyboard: buttons }
@@ -80,12 +80,11 @@ bot.on('callback_query', async (ctx) => {
 
         const { selectedTags, msgId } =sessions[userId]
         const allTags = sessions[userId].selectedTags
-        await ctx.telegram.editMessageText(
+        await ctx.telegram.editMessageReplyMarkup(
             ctx.chat.id,
             msgId,
             undefined,
-            '✏️Напиши тег или теги через запятую:',
-            { reply_markup: buildTagKeyboard(allTags, selectedTags) }
+            buildTagKeyboard(allTags, selectedTags, true)
         )
 
     } else if (data === 'done') {
@@ -154,7 +153,7 @@ bot.on('text', async (ctx) => {
             msgId,
             undefined,
             `Сохранено. \nТеги: ${allTags.join(', ')}`,
-            { reply_markup: buildTagKeyboard(allTags, selectedTags) }
+            { reply_markup: buildTagKeyboard(allTags, selectedTags, false) }
         )
         } catch (e) {
             console.error('editMessageMarkup error:', e.message)
