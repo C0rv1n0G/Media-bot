@@ -195,6 +195,10 @@ if (text.startsWith('https://') || text.startsWith('http://')) {
             { reply_markup: buildTagKeyboard(tags, [...tags]) }
         )
         sessions[userId].msgId =msg.message_id
+
+        if (transformed !== text) {
+            await ctx.reply(transformed)
+        }
     })
 })    
 } else {

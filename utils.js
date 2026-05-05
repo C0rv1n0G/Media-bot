@@ -48,7 +48,7 @@ function transformUrl(url) {
             return url.replace(/https?:\/\/(www\.)?(twitter\.com|x\.com)/, 'https://vxtwitter.com')
         }
         if (hostname.includes('instagram.com')) {
-            return url.replace(/https?:\/\/(www\.)?instagram\.com/, 'https://ddinstagram.com')
+            return url.replace(/https?:\/\/(www\.)?instagram\.com/, 'https://vxinstagram.com')
         }
         if (hostname.includes('tiktok.com')) {
             return url.replace(/https?:\/\/(www\.)?tiktok\.com/, 'https://vxtiktok.com')
