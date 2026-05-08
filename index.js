@@ -201,9 +201,13 @@ if (text.startsWith('https://') || text.startsWith('http://')) {
         } else {
             const meta = await fetchMeta(text)
             if (meta.image) {
-                await ctx.replyWithPhoto(meta.image, {
+                try {
+                    await ctx.replyWithPhoto(meta.image, {
                     caption: meta.title || text
                 })
+                        } catch {
+                            // картинка недоступна - просто пропускаем
+            }
             }
         }
     })
