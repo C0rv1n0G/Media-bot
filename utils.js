@@ -1,3 +1,22 @@
+const axios = require('axios')
+const cheerio = require ('cheerio')
+
+async function fetchMeta(url) {
+    try {
+        const { data } = await axios.get(url, {
+            headers: { 'User-Agent': 'Mozilla/5.0' },
+            timeout: 5000
+        })
+        const $ = cheerio.load(data)
+        const title = $('meta[property="og:title"]').attr('content') || $('title').text()
+        const description = $('meta[property="og:description"]').attr('content') || ''
+        const image = $('meta[property="og:image"]').attr('content') || ''
+        return { title, description, image }
+    } catch {
+        return { title: '', description: '', image: '' }
+    }
+}
+
 function parseUrl(url) {
     try {
         const u = new URL(url)
@@ -59,4 +78,4 @@ function transformUrl(url) {
     }
 }
 
-module.exports = { parseUrl, transformUrl }
+module.exports = { parseUrl, transformUrl, fetchMeta }

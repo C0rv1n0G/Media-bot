@@ -1,7 +1,7 @@
 require('dotenv').config()
 const { Telegraf } = require('telegraf')
 const fs = require('fs')
-const { parseUrl, transformUrl } = require('./utils')
+const { parseUrl, transformUrl, fetchMeta } = require('./utils')
 
 const sessions ={}
 
@@ -198,6 +198,13 @@ if (text.startsWith('https://') || text.startsWith('http://')) {
 
         if (transformed !== text) {
             await ctx.reply(transformed)
+        } else {
+            const meta = await fetchMeta(text)
+            if (meta.image) {
+                await ctx.replyWithPhoto(meta.image, {
+                    caption: meta.title || text
+                })
+            }
         }
     })
 })    

@@ -19,7 +19,8 @@
   },
   "homepage": "https://github.com/C0rv1n0G/Media-bot#readme",
   "dependencies": {
-    "axios": "^1.13.6",
+    "axios": "^1.16.0",
+    "cheerio": "^1.2.0",
     "dotenv": "^17.3.1",
     "telegraf": "^4.16.3"
   }
