@@ -1,7 +1,7 @@
 require('dotenv').config()
 const { Telegraf } = require('telegraf')
 const fs = require('fs')
-const { parseUrl, transformUrl, fetchMeta } = require('./utils')
+const { parseUrl, transformUrl, fetchMeta, fetchReddit } = require('./utils')
 
 const sessions ={}
 
@@ -198,16 +198,28 @@ if (text.startsWith('https://') || text.startsWith('http://')) {
 
         if (transformed !== text) {
             await ctx.reply(transformed)
+        } else if (platform === 'reddit') {
+            const reddit = await fetchReddit(text)
+
+            console.log(reddit.images)
+
+            if (reddit.images.length > 0) {
+                await ctx.replyWithMediaGroup(
+                    reddit.images.slice(0, 10).map(url => ({
+                        type: 'photo',
+                        media: url
+                    }))
+                )
+            }
+            if (reddit.title) {
+                await ctx.reply(reddit.title)
+            }
         } else {
             const meta = await fetchMeta(text)
             if (meta.image) {
                 try {
-                    await ctx.replyWithPhoto(meta.image, {
-                    caption: meta.title || text
-                })
-                        } catch {
-                            // картинка недоступна - просто пропускаем
-            }
+                    await ctx.replyWithPhoto(meta.image, { caption: meta.title || text })
+                } catch {}
             }
         }
     })

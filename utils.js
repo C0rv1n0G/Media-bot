@@ -58,6 +58,63 @@ function parseUrl(url) {
     }
 }
 
+async function fetchReddit(url) {
+    try {
+        const cleanUrl = url.split('?')[0].replace(/\/$/, '')
+        const jsonUrl = cleanUrl
+            .replace('www.reddit.com', 'old.reddit.com')
+             + '.json'
+
+        const { data } = await axios.get(jsonUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36',
+                'Accept': 'application/json',
+                'Referer': 'https://www.reddit.com/'
+            }
+        })
+
+        const post = data[0].data.children[0].data
+        let images = []
+
+        //Галерея
+        if (post.gallery_data && post.media_metadata) {
+            images = Object.values(post.media_metadata)
+            .map(m => {
+                if (m.s?.u) {
+                    return m.s.u
+                    .replace(/&amp;/g, '&')
+                    .split('?')[0]
+                }
+                return null
+            })
+            .filter(Boolean)
+        }
+
+        //Обычная картинка
+        else if (
+            post.url_overridden_by_dest &&
+            /\.(jpg|jpeg|png)$/i.test(post.url_overridden_by_dest)
+        ) {
+            images = [post.url_overridden_by_dest]
+        }
+
+        return {
+            title: post.title || '',
+            text: post.selftext || '',
+            images
+        }
+
+    } catch (e) {
+        console.error('fetchReddit error:', e.message)
+
+        return {
+            title: '',
+            text: '',
+            images: []
+        }
+    }
+}
+
 function transformUrl(url) {
     try {
         const u = new URL(url)
@@ -78,4 +135,4 @@ function transformUrl(url) {
     }
 }
 
-module.exports = { parseUrl, transformUrl, fetchMeta }
+module.exports = { parseUrl, transformUrl, fetchMeta, fetchReddit }
